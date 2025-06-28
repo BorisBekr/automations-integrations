@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Maps Lead Scraper - Powered by Apify</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Logo -->
+        <div class="logo-container">
+            <img src="Apify-logo.png" alt="Apify Logo" class="apify-logo" />
+        </div>
+
+        <!-- Main Card -->
+        <div class="card">
+            <div class="card-content">
+                <h1 class="card-title">Scrape leads from Google Maps</h1>
+                
+                <form id="leadForm" class="lead-form">
+                    <div class="form-group">
+                        <label for="searchQuery">Search query</label>
+                        <input 
+                            type="text" 
+                            id="searchQuery" 
+                            name="searchQuery" 
+                            placeholder="e.g., cafe, restaurant, plumber, dentist"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="location">Location</label>
+                        <input 
+                            type="text" 
+                            id="location" 
+                            name="location" 
+                            placeholder="e.g., New York, USA or Prague, Czech Republic"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="numberOfResults">Number of results *</label>
+                        <input 
+                            type="number" 
+                            id="numberOfResults" 
+                            name="numberOfResults" 
+                            placeholder="e.g. 25 (max 50 results)" 
+                            required 
+                            min="1" 
+                            max="50"
+                        />
+                        <div id="resultsWarning" class="field-warning hidden">
+                            Maximum 50 results allowed for this demo
+                        </div>
+                    </div>
+
+                    <button type="submit" class="submit-button">
+                        <span class="button-text">SUBMIT</span>
+                    </button>
+                </form>
+
+                <!-- Success/Loading States -->
+                <div id="successMessage" class="success-message hidden">
+                    <div class="success-icon">✓</div>
+                    <p>Your request has been submitted successfully!</p>
+                    <div class="loading-container">
+                        <div class="loading-spinner"></div>
+                        <p>Processing your request...</p>
+                    </div>
+                </div>
+
+                <!-- Download Section -->
+                <div id="downloadSection" class="download-section hidden">
+                    <div class="download-icon">📄</div>
+                    <p>Your CSV file is ready!</p>
+                    <a href="#" id="downloadLink" class="download-link" download>
+                        Download CSV File
+                    </a>
+                </div>
+
+                <!-- Call to Action -->
+                <div id="ctaSection" class="cta-section hidden">
+                    <p class="cta-text">
+                        Harness the full power of Apify's 
+                        <a href="https://apify.com/compass/google-maps-extractor" target="_blank" class="cta-link">Google Maps Extractor</a>
+                    </p>
+                </div>
+
+                <!-- Error Message -->
+                <div id="errorMessage" class="error-message hidden">
+                    <p></p>
+                </div>
+
+                <!-- Usage Counter -->
+                <div id="usageCounter" class="usage-counter">
+                    <span>Remaining searches: <span id="remainingRuns">3</span>/3</span>
+                </div>
+
+                <!-- Usage Limit Warning -->
+                <div id="usageLimitWarning" class="usage-limit-warning hidden">
+                    <div class="warning-icon">⚠️</div>
+                    <p>You've reached the maximum number of free searches (3). To continue scraping Google Maps data, please visit the full Apify Google Maps Extractor.</p>
+                    <a href="https://apify.com/compass/google-maps-extractor" target="_blank" class="upgrade-link">
+                        Get Full Access
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html> 

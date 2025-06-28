@@ -1,0 +1,238 @@
+{
+  "name": "Google Maps Lead Scraping: UI > CSV",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "google-maps-leads",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "id": "5abce453-cf60-476b-8415-ed6ea1b260ea",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -720,
+        -300
+      ],
+      "webhookId": "google-maps-leads"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/compass~google-maps-extractor/runs?token=FZpWYDoZEEgZQDDfcE4M7gCmx",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"language\": \"en\",\n  \"locationQuery\": \"{{ $json.location }}\",\n  \"maxCrawledPlacesPerSearch\": {{ $json.numberOfResults }},\n  \"searchStringsArray\": [\n    \"{{ $json.searchQuery }}\"\n  ],\n  \"skipClosedPlaces\": true,\n  \"website\": \"allPlaces\"\n}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "55ded79e-933b-4ec6-9056-9418f9133035",
+      "name": "Start Google Maps Scraping",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -520,
+        -300
+      ]
+    },
+    {
+      "parameters": {
+        "amount": 30
+      },
+      "id": "52ebc446-575a-48f8-8dc8-6178bdfc9648",
+      "name": "Wait for Scraping",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -320,
+        -300
+      ],
+      "webhookId": "wait-for-scraping"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.apify.com/v2/acts/compass~google-maps-extractor/runs/last/dataset/items?token=FZpWYDoZEEgZQDDfcE4M7gCmx",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "3be71ce1-eee6-4fdd-8ec9-924d69d53edc",
+      "name": "Get Scraping Results",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -120,
+        -300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse and format Google Maps lead data for CSV output\nconst inputData = $input.all();\nconst formattedLeads = [];\n\n// Process each item from the Google Maps scraper results\nfor (const item of inputData) {\n  const data = item.json;\n  \n  try {\n    // Format the scraped date\n    let formattedDate = '';\n    if (data.scrapedAt) {\n      const date = new Date(data.scrapedAt);\n      formattedDate = date.toISOString().split('T')[0]; // YYYY-MM-DD format\n    }\n    \n    // Handle categories - combine into comma-separated string\n    let categoriesText = '';\n    if (data.categories && Array.isArray(data.categories)) {\n      categoriesText = data.categories.join(', ');\n    } else if (data.categoryName) {\n      categoriesText = data.categoryName;\n    }\n    \n    // Create formatted lead object\n    const formattedLead = {\n      'Business Name': data.title || '',\n      'Address': data.address || '',\n      'Phone': data.phone || '',\n      'Website': data.website || '',\n      'Review Score': data.totalScore || 0,\n      'Review Count': data.reviewsCount || 0,\n      'Categories': categoriesText,\n      'Status': 'New Lead',\n      'Google Maps URL': data.url || '',\n      'Search Keyword': data.searchString || '',\n      'Created Date': formattedDate\n    };\n    \n    formattedLeads.push(formattedLead);\n    \n  } catch (error) {\n    // Log error but continue processing other items\n    console.error(`Error processing lead: ${data.title || 'Unknown'}`, error);\n    \n    // Create a minimal lead entry with available data\n    const fallbackLead = {\n      'Business Name': data.title || 'Error processing lead',\n      'Address': data.address || '',\n      'Phone': data.phone || '',\n      'Website': data.website || '',\n      'Review Score': 0,\n      'Review Count': 0,\n      'Categories': '',\n      'Status': 'New Lead',\n      'Google Maps URL': data.url || '',\n      'Search Keyword': data.searchString || '',\n      'Created Date': new Date().toISOString().split('T')[0]\n    };\n    \n    formattedLeads.push(fallbackLead);\n  }\n}\n\n// Return the formatted leads\nreturn formattedLeads.map(lead => ({ json: lead }));"
+      },
+      "id": "c95bbdde-d313-4dc0-b617-9b3131e41c0b",
+      "name": "Parse and Format Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        100,
+        -300
+      ]
+    },
+    {
+      "parameters": {
+        "options": {
+          "delimiter": ",",
+          "fileName": "={{ 'google-maps-leads-' + $now.format('yyyy-MM-dd-HHmmss') + '.csv' }}"
+        }
+      },
+      "id": "43b65a92-7cd8-4cda-bce5-57c73937c196",
+      "name": "Convert to CSV",
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        300,
+        -300
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "binary",
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "text/csv"
+              },
+              {
+                "name": "Content-Disposition",
+                "value": "={{ 'attachment; filename=\"google-maps-leads-' + $now.format('yyyy-MM-dd-HHmmss') + '.csv\"' }}"
+              },
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, GET, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type"
+              }
+            ]
+          }
+        }
+      },
+      "id": "54200653-a037-4708-85dd-37df7acc9adb",
+      "name": "Send CSV Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        500,
+        -300
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 🔗 Webhook Configuration\n\n### Webhook URL:\n`https://your-n8n-instance.com/webhook/google-maps-leads`\n\n### Expected POST data:\n```json\n{\n  \"searchQuery\": \"restaurant\",\n  \"location\": \"New York, USA\",\n  \"numberOfResults\": 25\n}\n```\n\n### Response:\nReturns CSV file as binary download",
+        "height": 440,
+        "width": 400,
+        "color": 6
+      },
+      "id": "5001a7fd-9c3e-4430-919a-9e5fe9b2c59d",
+      "name": "Webhook Documentation",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -760,
+        -80
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Start Google Maps Scraping",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start Google Maps Scraping": {
+      "main": [
+        [
+          {
+            "node": "Wait for Scraping",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for Scraping": {
+      "main": [
+        [
+          {
+            "node": "Get Scraping Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Scraping Results": {
+      "main": [
+        [
+          {
+            "node": "Parse and Format Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse and Format Data": {
+      "main": [
+        [
+          {
+            "node": "Convert to CSV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to CSV": {
+      "main": [
+        [
+          {
+            "node": "Send CSV Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "0ea1e13e-d4fc-4cf2-a99f-a4d1da8b7cc1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "01975f3416f9c94e57ce77e5aeba93126d3577ce09a1dba4a5a8880ff682abce"
+  },
+  "id": "sQrJw2HkZZga0hY2",
+  "tags": []
+}
